@@ -1,0 +1,260 @@
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+
+  <!-- Top bar -->
+  <div class="d-flex justify-content-between align-items-center mb-3 top-bar">
+    <div>
+      <h4 class="mb-0">Attendance Recognition System</h4>
+      <small class="text-muted">YOLO + FaceNet Real-time Monitoring</small>
+    </div>
+    <div class="d-flex align-items-center gap-4">
+      <div class="text-end">
+        <div id="top-date" class="small text-muted"></div>
+        <div id="top-time" class="fw-semibold"></div>
+      </div>
+      <div class="d-flex align-items-center">
+        <div class="me-2 text-end">
+          <div class="small fw-semibold">{{ admin.name }}</div>
+          <div class="small text-muted">{{ admin.role }}</div>
+        </div>
+        <div class="avatar-circle"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Left: Live stats + quick actions -->
+    <div class="col-lg-3 mb-3">
+      <div class="card soft-card mb-3">
+        <div class="card-header border-0 bg-transparent pb-1">
+          <span class="fw-semibold">Live Stats</span>
+        </div>
+        <div class="card-body pt-2">
+          <div class="stat-item mb-3">
+            <div class="stat-icon bg-primary-soft">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+              <div class="small text-muted">Current Session</div>
+              <div class="fw-semibold">
+                {{ stats.present }}/{{ stats.total_students }} students
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-item mb-3">
+            <div class="stat-icon bg-success-soft">
+              <i class="bi bi-bullseye"></i>
+            </div>
+            <div>
+              <div class="small text-muted">Recognition Accuracy</div>
+              <div class="fw-semibold">
+                {{ stats.accuracy or 0 }}%
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <div class="stat-icon bg-violet-soft">
+              <i class="bi bi-speedometer2"></i>
+            </div>
+            <div>
+              <div class="small text-muted">Processing Speed</div>
+              <div class="fw-semibold">
+                {{ stats.speed_ms or 0 }} ms/frame
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card soft-card">
+        <div class="card-header border-0 bg-transparent pb-1">
+          <span class="fw-semibold">Quick Actions</span>
+        </div>
+        <div class="card-body pt-2 d-grid gap-2">
+          <a href="/dashboard" class="btn btn-dark btn-sm">Refresh Camera</a>
+          <a href="/evaluation" class="btn btn-outline-secondary btn-sm">View Reports</a>
+          <a href="/register" class="btn btn-outline-primary btn-sm">Add Students</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Camera + recent recognitions -->
+    <div class="col-lg-6 mb-3">
+      <div class="card soft-card mb-3">
+        <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center">
+            <span class="me-2"><i class="bi bi-camera-video"></i></span>
+            <span class="fw-semibold">Real-time Camera Preview</span>
+          </div>
+          <span class="badge bg-danger-soft text-danger fw-semibold">
+            ● LIVE
+          </span>
+        </div>
+        <div class="card-body pt-2">
+          <div class="d-flex justify-content-center">
+            <img id="live-feed"
+                 src="/video-stream"
+                 class="img-fluid rounded camera-feed"
+                 alt="Live camera">
+          </div>
+        </div>
+      </div>
+
+      <div class="card soft-card">
+        <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">Recent Recognitions</span>
+        </div>
+        <div class="card-body pt-2">
+          {% if recent_recognitions %}
+            {% for r in recent_recognitions %}
+            <div class="recent-item mb-2">
+              <div>
+                <div class="fw-semibold">{{ r.name }}</div>
+                <div class="small text-muted">{{ r.student_id }}</div>
+              </div>
+              <div class="text-end">
+                <span class="badge bg-success-soft text-success fw-semibold">
+                  {{ r.confidence }}%
+                </span>
+                <div class="small text-muted">{{ r.time }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-muted small">No recognitions yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Today’s attendance summary -->
+    <div class="col-lg-3 mb-3">
+      <div class="card soft-card mb-3">
+        <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">Today's Attendance</span>
+        </div>
+        <div class="card-body pt-2">
+          <div class="d-flex mb-3">
+            <div class="flex-fill text-center summary-box present-box">
+              <div class="summary-value">{{ stats.present }}</div>
+              <div class="summary-label">Present</div>
+            </div>
+            <div class="flex-fill text-center summary-box absent-box ms-2">
+              <div class="summary-value">{{ stats.absent }}</div>
+              <div class="summary-label">Absent</div>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="max-height: 260px;">
+            <table class="table table-sm table-borderless align-middle mb-0">
+              <tbody id="attendance-body">
+                {% for a in attendance_today %}
+                <tr>
+                  <td>
+                    <div class="fw-semibold small">{{ a.name }}</div>
+                    <div class="small text-muted">{{ a.student_id }}</div>
+                  </td>
+                  <td class="text-end small">
+                    {{ a.time_in }}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden canvas if you later capture frames -->
+  <canvas id="frame-canvas" style="display:none;"></canvas>
+
+</div>
+<canvas id="frame-canvas" style="display:none;"></canvas>
+<script>
+async function sendFrameForRecognition() {
+  try {
+    const img = document.getElementById("live-feed");
+    if (!img.complete) return;
+
+    const canvas = document.getElementById("frame-canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    ctx.drawImage(img, 0, 0);
+
+    const blob = await new Promise(resolve =>
+      canvas.toBlob(resolve, "image/jpeg", 0.8)
+    );
+    if (!blob) return;
+
+    const formData = new FormData();
+    formData.append("file", blob, "frame.jpg");
+
+    const res = await fetch("/recognize-face", {
+      method: "POST",
+      body: formData
+    });
+
+    // ignore 400 errors for now
+    if (!res.ok) return;
+    const data = await res.json();
+    console.log("Recognized:", data);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// call recognition every 3 seconds
+setInterval(sendFrameForRecognition, 3000);
+</script>
+<script>
+function updateClock() {
+  const now = new Date();
+  const dateEl = document.getElementById("top-date");
+  const timeEl = document.getElementById("top-time");
+  if (!dateEl || !timeEl) return;
+  dateEl.textContent = now.toLocaleDateString(undefined, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+  timeEl.textContent = now.toLocaleTimeString();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+async function refreshAttendance() {
+  try {
+    const res = await fetch("/api/attendance-today");
+    if (!res.ok) return;
+    const rows = await res.json();
+    const tbody = document.getElementById("attendance-body");
+    tbody.innerHTML = "";
+    for (const a of rows) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>
+          <div class="fw-semibold small">${a.name}</div>
+          <div class="small text-muted">${a.student_id}</div>
+        </td>
+        <td class="text-end small">
+          ${a.time_in}
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+setInterval(refreshAttendance, 3000);
+</script>
+{% endblock %}
